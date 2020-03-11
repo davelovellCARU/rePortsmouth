@@ -7,13 +7,32 @@ output:
     reference_docx: caRefDoc.docx
 ---
 
-```{r, include = FALSE, echo = FALSE}
+```{r behindTheScenes, include = FALSE, echo = FALSE}
 #Five hashes is a fifth level heading, which is set to be a pagebreak in the reference document
 #NB I think this template needs a little work
+knitr::opts_chunk$set(include = FALSE)
+
+leaders <- readRDS("O:\\WCC\\Learning and Development\\Research\\PROJECT - Portsmouth 2019 onwards\\Data\\leaders & attenders\\leadersResponses2018and2019.rdat")
+
+attenders <- readRDS("O:\\WCC\\Learning and Development\\Research\\PROJECT - Portsmouth 2019 onwards\\Data\\leaders & attenders\\attenders2018NoUnderFives.rdat")
+
+# ^ Note that the above files are coming from 'static' locations - there are no markdown files that will automatically update any of that stuff. 
 ```
 
+```{r libraries}
+library("RgoogleMaps")
+library("dplyr")
+library("magrittr")
+```
 
-#Portsmouth Pioneer Project Evaluation Quantitative Report - Mock-up
+##### 
+
+```{r getGoogleCoords}
+# leaders %>% 
+#   mutate(coord)
+```
+
+# Portsmouth Pioneer Project Evaluation Quantitative Report - Mock-up
 
 ## Pioneer Posts
 
