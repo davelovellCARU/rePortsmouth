@@ -19,13 +19,11 @@ attenders <- readRDS("O:\\WCC\\Learning and Development\\Research\\PROJECT - Por
 # ^ Note that the above files are coming from 'static' locations - there are no markdown files that will automatically update any of that stuff. 
 ```
 
-```{r libraries}
-library("RgoogleMaps")
+```{r libraries, include = FALSE}
+library("mapsapi")
 library("dplyr")
 library("magrittr")
 ```
-
-##### 
 
 ```{r createArchitecture}
 suppressWarnings(dir.create(here::here("data")))
@@ -37,15 +35,16 @@ suppressWarnings(dir.create(here::here("data")))
 ### if(the coordinates exist){just use them}
 ### otherwise{try to make them by looking for a google maps api key}
 ### but if(you can't find an api key){throw a very informative error}
-if(!file.exists(here::here("data/googleCoords.rdat")))
+if(file.exists(here::here("data\\googleCoords.rdat")))
 {
-  googleCoords <- readRDS(here::here("data/googleCoords.rdat"))
+  googleCoords <- readRDS(here::here("data\\googleCoords.rdat"))
   
   message("googleCoords.rdat found in \\data")
   
 } else {
   
-  lookForKeyHere <- "O:\\WCC\Learning and Development\\Research\\Team member folders\\Dave Lovell\\keys\\googleMapsApi.csv"
+  lookForKeyHere <- "O:\\WCC\\Learning and Development\\Research\\Team member folders\\Dave Lovell\\keys\\googleMapsApi.csv"
+  
   message("googleCoords.rdat not located in \\data.
 Searching for Google Maps API key to generate coordinates")
   
@@ -54,10 +53,10 @@ Searching for Google Maps API key to generate coordinates")
     googleKey <- read.csv(here::here("data\\googleMapsApi.csv"))
     message("Maps API key found in \\data")
     
-  } else if(file.exists(file.exists(lookForKeyHere))) {
+  } else if(file.exists(lookForKeyHere)) {
     
     googleKey <- read.csv(lookForKeyHere)
-    write.csv(googleKey, here::here("data\\googleMapsApi.csv"))
+    write.csv(googleKey, here::here("data\\googleMapsApi.csv"), row.names = FALSE)
     message("Maps API key found on O drive. Saving to \\data")
       
   } else stop("'googleCoords.rdat' not found in \\data
@@ -65,8 +64,12 @@ and googleMapsApi.csv not found in \\data or on O Drive.
 Either establish connection to 'O:\\\\', or talk to Dave Lovell
 to get the csv, or get your own key and write a .csv with fields
 `client` and `key`")
-}
+  
+  
+  
+} # Run the above if the google data doesn't exist
 ```
+##### 
 
 # Portsmouth Pioneer Project Evaluation Quantitative Report - Mock-up
 
