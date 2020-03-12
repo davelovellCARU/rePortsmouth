@@ -26,6 +26,7 @@ library("magrittr")
 library("stringr")
 library("purrr")
 library("XML")
+library("sf")
 ```
 
 ```{r createArchitecture}
@@ -101,7 +102,8 @@ to get the csv, or get your own key and write a .csv with fields
     
     if(!is.character(address)|is.na(address)) {
       
-      coords = NA } else {
+      lat = NA
+      lng = NA } else {
         
         mapsapi::mp_geocode(addresses = address, key = key)[[1]] %>% #shouldn't be longer than 1
       (XML::xmlParse) ->
@@ -123,9 +125,9 @@ to get the csv, or get your own key and write a .csv with fields
         str_extract("(?<=(<lng>)).+(?=(</lng>))") %>% 
         as.numeric ->
         lng
-
-      coords <- list(lat,lng)
       }
+    
+          coords <- list("lat" = lat,"lng" = lng)
       
       return(coords)
     }
@@ -157,6 +159,10 @@ At the beginning of the Pioneer Project, the ambition was to see 12 new fxC begu
 
 ```{r makingAMap}
 
+  leaders %<>% 
+  mutate(points = map(latLong,
+                      ~ st_point(.["lat"], .["lng"])) %>% 
+           st_sfc(crs = "WGS84"))
 
 ```
 
