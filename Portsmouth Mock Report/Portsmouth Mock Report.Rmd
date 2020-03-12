@@ -23,6 +23,9 @@ attenders <- readRDS("O:\\WCC\\Learning and Development\\Research\\PROJECT - Por
 library("mapsapi")
 library("dplyr")
 library("magrittr")
+library("stringr")
+library("purrr")
+library("XML")
 ```
 
 ```{r createArchitecture}
@@ -35,11 +38,13 @@ suppressWarnings(dir.create(here::here("data")))
 ### if(the coordinates exist){just use them}
 ### otherwise{try to make them by looking for a google maps api key}
 ### but if(you can't find an api key){throw a very informative error}
-if(file.exists(here::here("data\\googleCoords.rdat")))
+if(file.exists(here::here("data\\latLong.rdat")))
 {
-  googleCoords <- readRDS(here::here("data\\googleCoords.rdat"))
+  latLongTib <- readRDS(here::here("data\\latLong.rdat"))
+  leaders %<>% 
+    left_join(latLongTib, by = "responseId")
   
-  message("googleCoords.rdat found in \\data")
+  message("latLong.rdat found in \\data")
   
 } else {
   
@@ -55,18 +60,91 @@ Searching for Google Maps API key to generate coordinates")
     
   } else if(file.exists(lookForKeyHere)) {
     
-    googleKey <- read.csv(lookForKeyHere)
-    write.csv(googleKey, here::here("data\\googleMapsApi.csv"), row.names = FALSE)
+    googleKey <- read.csv(lookForKeyHere, row.names = FALSE)
+    write.csv(googleKey, here::here("data\\googleMapsApi.csv"))
     message("Maps API key found on O drive. Saving to \\data")
       
-  } else stop("'googleCoords.rdat' not found in \\data
+  } else {
+    stop("'latLongs.rdat' not found in \\data
 and googleMapsApi.csv not found in \\data or on O Drive.
 Either establish connection to 'O:\\\\', or talk to Dave Lovell
 to get the csv, or get your own key and write a .csv with fields
 `client` and `key`")
+  } # Run the above if you can't find the google key
   
+  googleKey <- googleKey$key
   
+  # Cut websites from info_venueDetails to get addresses
+  leaders %<>%
+    mutate(address =
+             info_venueDetails %>% 
+             # This took a while - regex often counterintuitive
+             # remove a string that has spaces (or eols) on either side
+             # and otherwise consists of any number of anything but spaces
+             # on either side of a '.co' or '.com' or '.org' or '.uk'
+    str_remove_all("(?<=[:space:]|^)[^[:space:]]*(\\.co|\\.com|\\.org|\\.uk)[^[:space:]]*(?=[:space:]|$)"))
   
+  ### coordGet Function: get Google data, then get lat/long numerics from XML data
+  # xmlGet <- function(address, key) {
+  #   mapsapi::mp_geocode(address = address, key) ->
+  #     xml
+  #   return(xml)
+  # }
+  
+  # leaders %<>%
+  #   mutate(xml = 
+  #            map(list(address),
+  #                ~ xmlGet(., key = googleKey)))
+  # 
+  coordGet <-
+  function(address, key) {
+    
+    if(!is.character(address)|is.na(address)) {
+      
+      coords = NA } else {
+        
+        mapsapi::mp_geocode(addresses = address, key = key)[[1]] %>% #shouldn't be longer than 1
+      (XML::xmlParse) ->
+      someXML
+    
+      XML::getNodeSet(someXML,"/GeocodeResponse/result/geometry/location/lat") ->
+        latNode
+      XML::getNodeSet(someXML, "/GeocodeResponse/result/geometry/location/lng") ->
+        lngNode
+  
+      latNode %>% 
+        (XML::toString.XMLNode) %>%
+        str_extract("(?<=(<lat>)).+(?=(</lat>))") %>% 
+        as.numeric ->
+        lat
+      
+      lngNode  %>% 
+        (XML::toString.XMLNode) %>%
+        str_extract("(?<=(<lng>)).+(?=(</lng>))") %>% 
+        as.numeric ->
+        lng
+
+      coords <- list(lat,lng)
+      }
+      
+      return(coords)
+    }
+
+  leaders %<>%
+    mutate(latLong = map(as.list(address),
+                         ~ coordGet(address = ., key = googleKey)))
+  
+  leaders %>% 
+    select(responseId, address, latLong) ->
+    latLongTib
+  
+  latLongTib%>% 
+    saveRDS(here::here("data\\latLong.rdat"))
+  
+  leaders %<>%
+    left_join(latLongTib %>% 
+                select(-address),
+              by = "responseId")
 } # Run the above if the google data doesn't exist
 ```
 ##### 
@@ -77,10 +155,15 @@ to get the csv, or get your own key and write a .csv with fields
 
 At the beginning of the Pioneer Project, the ambition was to see 12 new fxC begun each with 50-100 worshippers and for 15% of the diocesan church attendance to be in fxC (from 1200 to 2200).
 
+```{r makingAMap}
+
+
+```
+
 * fxC data from leaders and attenders surveys
 * list of initiatives that didn't meet fxC criteria
 * look at all fxC but focus in on any links with pioneer posts
-* any fxC started by 'voluntar lay pioneers'
+* any fxC started by 'voluntary lay pioneers'
 
 ## Harbour Church
 The original project plan aimed to “plant a large, city centre, resourcing church appealing to younger people. Within the 5 year timescales, we expect this to have grown to at least 200 worshippers and to be exploring a further plant”. 
