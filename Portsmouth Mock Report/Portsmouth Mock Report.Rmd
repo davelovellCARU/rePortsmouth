@@ -10,7 +10,7 @@ output:
 ```{r behindTheScenes, include = FALSE, echo = FALSE}
 #Five hashes is a fifth level heading, which is set to be a pagebreak in the reference document
 #NB I think this template needs a little work
-knitr::opts_chunk$set(include = FALSE)
+knitr::opts_chunk$set(echo = FALSE)
 
 leaders <- readRDS("O:\\WCC\\Learning and Development\\Research\\PROJECT - Portsmouth 2019 onwards\\Data\\leaders & attenders\\leadersResponses2018and2019.rdat")
 
@@ -29,6 +29,7 @@ library("magrittr")
 
 ```{r getGoogleCoords}
 # leaders %>% 
+here::here()
 #   mutate(coord)
 ```
 
