@@ -171,22 +171,33 @@ mapLeaders <-
   leaders %>% 
   filter(!is.na(lat) & !is.na(lng)) %>% 
   st_as_sf(coords = c("lat", "lng"),
-           # google Maps proj4:
-           crs = "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs",
+           # google Maps proj4 for long-lat data
+           crs = "+proj=longlat +datum=WGS84",
            agr = "identity") # Because these are buildings.
 
-# register_google(client = googleClient,
-#                 key = googleKey)
-# 
-# basemap <- get_map(location = "Portsmouth, UK", zoom = 9, maptype = 'roadmap')
-# 
-# ggmap(basemap) +
-#   geom_sf(data = mapLeaders,
-#           colour = "black",
-#           alpha = 0,
-#           size = 1,
-#           inherit.aes = FALSE)
-# 
+register_google(key = googleKey)
+
+if(!file.exists(here::here("data/fxcLocationBasemap.rdat"))) {
+  
+basemap <- get_map(location = "portsmouth, uk", zoom = 10, maptype = 'roadmap', source = "google")
+saveRDS(basemap, here::here("data/fxcLocationBasemap.rdat"))
+} else {
+  basemap <- readRDS(here::here("data/fxcLocationBasemap.rdat"))
+}
+
+ggmap(basemap) +
+  geom_point(data = leaders,
+             aes(x = lng, y = lat),
+             colour = "red",
+             size = 1,
+             inherit.aes = FALSE) +
+  ggtitle("Locations of fresh expressions in Portsmoutn") +
+  xlab(NULL) + ylab(NULL) +
+  theme(axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank())
+
 # ggplot(mapLeaders) +
 #   geom_sf(aes(geometry = geometry))
 
