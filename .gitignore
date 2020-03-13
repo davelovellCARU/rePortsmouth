@@ -2,4 +2,4 @@
 .Ruserdata
 .Rhistory
 *.docx
-*googleMapsApi.csv
+data/googleMapsApi.csv
