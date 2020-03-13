@@ -174,16 +174,7 @@ At the beginning of the Pioneer Project, the ambition was to see 12 new fxC begu
                             NA
                           }}) %T>%
            {map(., ~ print(class(.)))} %>% 
-           map(~ {
-             if(all(class(.) %in% c("XY", "POINT", "sfg"))) {
-               
-                 st_sfc(., crs = "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs")
-             } else
-             {
-               NA
-             }
-             
-             }))
+           st_sfc(crs = "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"))
 
 ggplot() +
   geom_sf(data = leaders, aes(geometry = points))
