@@ -42,6 +42,36 @@ suppressWarnings(dir.create(here::here("data")))
 ### if(the coordinates exist){just use them}
 ### otherwise{try to make them by looking for a google maps api key}
 ### but if(you can't find an api key){throw a very informative error}
+
+### Look for GMaps API Key --------------------------------------------------------------
+  lookForKeyHere <- "O:\\WCC\\Learning and Development\\Research\\Team member folders\\Dave Lovell\\keys\\googleMapsApi.csv"
+
+  if(file.exists(here::here("data\\googleMapsApi.csv"))) {
+    
+    #Look for key in data
+    googleKey <- read.csv(here::here("data\\googleMapsApi.csv"))
+    message("Maps API key found in \\data")
+    
+  } else if(file.exists(lookForKeyHere)) {
+    
+    # Look for key in O: drive, save to data if found
+    googleKey <- read.csv(lookForKeyHere)
+    write.csv(googleKey, here::here("data\\googleMapsApi.csv"))
+    message("Maps API key found on O drive. Saving to \\data")
+      
+  } else {
+    # Throw error if key cannot be found
+    stop("'googleMapsApi.csv' not found in \\data or on O Drive.
+Either establish connection to 'O:\\\\', or talk to Dave Lovell
+to get the csv, or get your own key and write a .csv with fields
+`client` and `key`")
+  }
+
+### Separate key and client data -------------------------------------------------
+  googleClient <- googleKey$client
+  googleKey <- googleKey$key
+
+### Look for lat/long data -------------------------------------------------------    
 if(file.exists(here::here("data\\latLong.rdat")))
 {
   latLongTib <- readRDS(here::here("data\\latLong.rdat"))
@@ -51,33 +81,10 @@ if(file.exists(here::here("data\\latLong.rdat")))
   message("latLong.rdat found in \\data")
   
 } else {
-  
-  lookForKeyHere <- "O:\\WCC\\Learning and Development\\Research\\Team member folders\\Dave Lovell\\keys\\googleMapsApi.csv"
-  
+    
   message("googleCoords.rdat not located in \\data.
-Searching for Google Maps API key to generate coordinates")
-  
-  if(file.exists(here::here("data\\googleMapsApi.csv"))) {
-    
-    googleKey <- read.csv(here::here("data\\googleMapsApi.csv"))
-    message("Maps API key found in \\data")
-    
-  } else if(file.exists(lookForKeyHere)) {
-    
-    googleKey <- read.csv(lookForKeyHere, row.names = FALSE)
-    write.csv(googleKey, here::here("data\\googleMapsApi.csv"))
-    message("Maps API key found on O drive. Saving to \\data")
-      
-  } else {
-    stop("'latLongs.rdat' not found in \\data
-and googleMapsApi.csv not found in \\data or on O Drive.
-Either establish connection to 'O:\\\\', or talk to Dave Lovell
-to get the csv, or get your own key and write a .csv with fields
-`client` and `key`")
-  } # Run the above if you can't find the google key
-  
-  googleKey <- googleKey$key
-  
+Using Google Maps API key to generate coordinates")
+
   # Cut websites from info_venueDetails to get addresses
   leaders %<>%
     mutate(address =
@@ -88,18 +95,7 @@ to get the csv, or get your own key and write a .csv with fields
              # on either side of a '.co' or '.com' or '.org' or '.uk'
     str_remove_all("(?<=[:space:]|^)[^[:space:]]*(\\.co|\\.com|\\.org|\\.uk)[^[:space:]]*(?=[:space:]|$)"))
   
-  ### coordGet Function: get Google data, then get lat/long numerics from XML data
-  # xmlGet <- function(address, key) {
-  #   mapsapi::mp_geocode(address = address, key) ->
-  #     xml
-  #   return(xml)
-  # }
-  
-  # leaders %<>%
-  #   mutate(xml = 
-  #            map(list(address),
-  #                ~ xmlGet(., key = googleKey)))
-  # 
+  ### coordGet function - use API to get xml w/ coords, then extract coords from XML ----------------
   coordGet <-
   function(address, key) {
     
@@ -135,14 +131,16 @@ to get the csv, or get your own key and write a .csv with fields
       return(coords)
     }
 
+  ### Run coordGet on each address ---------------------------------
   leaders %<>%
     mutate(latLong = map(as.list(address),
                          ~ coordGet(address = ., key = googleKey)))
-  
+  ### create LatLongTib
   leaders %>% 
     select(responseId, address, latLong) ->
     latLongTib
   
+  ### Save LatLongTib ----------------------------------------------
   latLongTib%>% 
     saveRDS(here::here("data\\latLong.rdat"))
   
@@ -150,6 +148,7 @@ to get the csv, or get your own key and write a .csv with fields
     left_join(latLongTib %>% 
                 select(-address),
               by = "responseId")
+  
 } # Run the above if the google data doesn't exist
 ```
 ##### 
@@ -170,14 +169,26 @@ leaders %<>%
 
 mapLeaders <-
   leaders %>% 
+  filter(!is.na(lat) & !is.na(lng)) %>% 
   st_as_sf(coords = c("lat", "lng"),
            # google Maps proj4:
            crs = "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs",
            agr = "identity") # Because these are buildings.
 
-
-ggplot() +
-  geom_sf(data = leaders, aes(geometry = points))
+# register_google(client = googleClient,
+#                 key = googleKey)
+# 
+# basemap <- get_map(location = "Portsmouth, UK", zoom = 9, maptype = 'roadmap')
+# 
+# ggmap(basemap) +
+#   geom_sf(data = mapLeaders,
+#           colour = "black",
+#           alpha = 0,
+#           size = 1,
+#           inherit.aes = FALSE)
+# 
+# ggplot(mapLeaders) +
+#   geom_sf(aes(geometry = geometry))
 
 ```
 
